@@ -1,7 +1,11 @@
 import express from "express";
-import type { NextFunction, Request, Response } from "express";
-import ownerRoutes from "./routes/ownerRoutes.js";
-import petRoutes from "./routes/petRoutes.js";
+import swaggerUi from "swagger-ui-express";
+import { controllers } from "./container.js";
+import { swaggerSpec } from "./docs/swagger.js";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
+import { appointmentRoutes } from "./routes/appointmentRoutes.js";
+import { ownerRoutes } from "./routes/ownerRoutes.js";
+import { petRoutes } from "./routes/petRoutes.js";
 
 const app = express();
 app.use(express.json());
@@ -9,48 +13,33 @@ app.use(express.json());
 // =================
 // Root
 // =================
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
     res.status(200).json({
         message: "API Clínica Veterinária",
-        version: "1.0.0"
+        version: "2.0.0",
+        docs: "/api-docs",
     });
 });
 
 // =================
-// Owners (Tutores)
+// Documentação (Swagger/OpenAPI)
 // =================
-app.use("/owners", ownerRoutes);
-
-// =================
-// Pets
-// =================
-app.use("/pets", petRoutes);
-
-// =================
-// Rota não encontrada
-// =================
-app.use((req, res) => {
-    res.status(404).json({
-        message: "Rota não encontrada.",
-    });
+app.get("/api-docs.json", (_req, res) => {
+    res.status(200).json(swaggerSpec);
 });
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // =================
-// Tratamento global de erros (ex.: JSON malformado)
+// Recursos
 // =================
-app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
-    if ((err as { type?: string } | null)?.type === "entity.parse.failed") {
-        res.status(400).json({
-            message: "JSON inválido no corpo da requisição.",
-        });
-        return;
-    }
+app.use("/owners", ownerRoutes(controllers.owner));
+app.use("/pets", petRoutes(controllers.pet));
+app.use("/appointments", appointmentRoutes(controllers.appointment));
 
-    console.error("Erro inesperado: ", err);
-
-    res.status(500).json({
-        message: "Erro interno do servidor.",
-    });
-});
+// =================
+// Rota não encontrada e tratamento global de erros
+// =================
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;

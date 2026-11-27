@@ -1,101 +1,37 @@
-import supabase from "../config/supabase.js";
+import { Entity } from "./Entity.js";
 
-export interface PetInput {
+export interface PetProps {
+    id: string;
     owner_id: string;
     name: string;
     species: string;
     breed: string | null;
     birth_date: string | null;
     active: boolean;
+    created_at: string;
+    /** Tutor do pet, carregado pelo relacionamento (chave estrangeira). */
+    owner?: { id: string; name: string } | null;
 }
 
-// Traz também o tutor de cada pet (join pela chave estrangeira)
-const PET_WITH_OWNER = "*, owner:owners(id, name)";
+/** Dados aceitos na criação/atualização de um pet. */
+export type PetInput = Omit<PetProps, "id" | "created_at" | "owner">;
 
-async function findAll(ownerId?: string) {
-    let query = supabase
-        .from("pets")
-        .select(PET_WITH_OWNER)
-        .order("name", { ascending: true });
-
-    if (ownerId) {
-        query = query.eq("owner_id", ownerId);
+/** Animal atendido pela clínica. Pertence a um único tutor. */
+export class Pet extends Entity<PetProps> {
+    get ownerId(): string {
+        return this.props.owner_id;
     }
 
-    const { data, error } = await query;
-
-    if (error) {
-        throw error;
+    get name(): string {
+        return this.props.name;
     }
 
-    return data;
-}
-
-// Retorna null quando o pet não existe
-async function findById(id: string) {
-    const { data, error } = await supabase
-        .from("pets")
-        .select(PET_WITH_OWNER)
-        .eq("id", id)
-        .maybeSingle();
-
-    if (error) {
-        throw error;
+    get active(): boolean {
+        return this.props.active;
     }
 
-    return data;
-}
-
-async function create(pet: PetInput) {
-    const { data, error } = await supabase
-        .from("pets")
-        .insert(pet)
-        .select()
-        .single();
-
-    if (error) {
-        throw error;
+    /** Regra: somente pets ativos podem ter consultas agendadas. */
+    canBeScheduled(): boolean {
+        return this.props.active;
     }
-
-    return data;
-}
-
-// Retorna null quando o pet não existe
-async function update(id: string, pet: PetInput) {
-    const { data, error } = await supabase
-        .from("pets")
-        .update(pet)
-        .eq("id", id)
-        .select()
-        .maybeSingle();
-
-    if (error) {
-        throw error;
-    }
-
-    return data;
-}
-
-// Retorna null quando o pet não existe
-async function remove(id: string) {
-    const { data, error } = await supabase
-        .from("pets")
-        .delete()
-        .eq("id", id)
-        .select()
-        .maybeSingle();
-
-    if (error) {
-        throw error;
-    }
-
-    return data;
-}
-
-export default {
-    findAll,
-    findById,
-    create,
-    update,
-    remove,
 }

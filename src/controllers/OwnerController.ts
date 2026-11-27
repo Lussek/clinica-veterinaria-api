@@ -1,157 +1,36 @@
 import type { Request, Response } from "express";
-import Owner from "../models/Owner.js";
-import { isUuid, sanitizeKeyword, validateOwner } from "../utils/validation.js";
-import { handleError } from "../utils/handleError.js";
+import type { OwnerService } from "../services/OwnerService.js";
 
-async function getAll(req: Request, res: Response) {
-    try {
-        const owners = await Owner.findAll();
+/**
+ * Recebe as requisições HTTP de tutores, delega ao service e devolve
+ * o status adequado. Erros lançados chegam ao middleware errorHandler
+ * (o Express 5 encaminha automaticamente erros de funções async).
+ */
+export class OwnerController {
+    constructor(private readonly service: OwnerService) {}
 
-        res.status(200).json(owners);
-    } catch (error) {
-        handleError(res, error, "buscar tutores");
-    }
-}
+    getAll = async (_req: Request, res: Response): Promise<void> => {
+        res.status(200).json(await this.service.findAll());
+    };
 
-async function getByKeyword(req: Request<{ keyword: string }>, res: Response) {
-    const keyword = sanitizeKeyword(req.params.keyword ?? "");
+    search = async (req: Request<{ keyword: string }>, res: Response): Promise<void> => {
+        res.status(200).json(await this.service.search(req.params.keyword));
+    };
 
-    if (!keyword) {
-        res.status(400).json({
-            message: "Palavra-chave não informada."
-        });
-        return;
-    }
+    getById = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+        res.status(200).json(await this.service.findById(req.params.id));
+    };
 
-    try {
-        const owners = await Owner.searchByKeyword(keyword);
+    create = async (req: Request, res: Response): Promise<void> => {
+        res.status(201).json(await this.service.create(req.body));
+    };
 
-        res.status(200).json(owners);
-    } catch (error) {
-        handleError(res, error, "pesquisar tutores");
-    }
-}
+    update = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+        res.status(200).json(await this.service.update(req.params.id, req.body));
+    };
 
-async function getById(req: Request<{ id: string }>, res: Response) {
-    const { id } = req.params;
-
-    if (!isUuid(id)) {
-        res.status(400).json({
-            message: "ID do tutor inválido."
-        });
-        return;
-    }
-
-    try {
-        const owner = await Owner.findById(id);
-
-        if (!owner) {
-            res.status(404).json({
-                message: "Tutor não encontrado.",
-            });
-            return;
-        }
-
-        res.status(200).json(owner);
-    } catch (error) {
-        handleError(res, error, "buscar tutor");
-    }
-}
-
-async function create(req: Request, res: Response) {
-    const validation = validateOwner(req.body);
-
-    if (!validation.ok) {
-        res.status(400).json({
-            message: "Dados inválidos.",
-            errors: validation.errors,
-        });
-        return;
-    }
-
-    try {
-        const owner = await Owner.create(validation.data);
-
-        res.status(201).json(owner);
-    } catch (error) {
-        handleError(res, error, "criar tutor");
-    }
-}
-
-async function update(req: Request<{ id: string }>, res: Response) {
-    const { id } = req.params;
-
-    if (!isUuid(id)) {
-        res.status(400).json({
-            message: "ID do tutor inválido."
-        });
-        return;
-    }
-
-    const validation = validateOwner(req.body);
-
-    if (!validation.ok) {
-        res.status(400).json({
-            message: "Dados inválidos.",
-            errors: validation.errors,
-        });
-        return;
-    }
-
-    try {
-        const owner = await Owner.update(id, validation.data);
-
-        if (!owner) {
-            res.status(404).json({
-                message: "Tutor não encontrado.",
-            });
-            return;
-        }
-
-        res.status(200).json(owner);
-    } catch (error) {
-        handleError(res, error, "atualizar tutor");
-    }
-}
-
-async function remove(req: Request<{ id: string }>, res: Response) {
-    const { id } = req.params;
-
-    if (!isUuid(id)) {
-        res.status(400).json({
-            message: "ID do tutor inválido."
-        });
-        return;
-    }
-
-    try {
-        const owner = await Owner.remove(id);
-
-        if (!owner) {
-            res.status(404).json({
-                message: "Tutor não encontrado.",
-            });
-            return;
-        }
-
-        res.status(200).json({
-            message: "Tutor removido com sucesso.",
-        });
-    } catch (error) {
-        handleError(
-            res,
-            error,
-            "remover tutor",
-            "Este tutor possui pets vinculados e não pode ser removido.",
-        );
-    }
-}
-
-export default {
-    getAll,
-    getById,
-    getByKeyword,
-    create,
-    update,
-    remove
+    delete = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+        await this.service.delete(req.params.id);
+        res.status(200).json({ message: "Tutor removido com sucesso." });
+    };
 }

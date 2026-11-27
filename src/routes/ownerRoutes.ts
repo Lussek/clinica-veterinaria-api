@@ -1,13 +1,15 @@
 import { Router } from "express";
-import OwnerController from "../controllers/OwnerController.js";
+import type { OwnerController } from "../controllers/OwnerController.js";
 
-const router = Router();
+export function ownerRoutes(controller: OwnerController): Router {
+    const router = Router();
 
-router.get("/", OwnerController.getAll);
-router.get("/search/:keyword", OwnerController.getByKeyword);
-router.get("/:id", OwnerController.getById);
-router.post("/", OwnerController.create);
-router.put("/:id", OwnerController.update);
-router.delete("/:id", OwnerController.remove);
+    router.get("/", controller.getAll);
+    router.get("/search/:keyword", controller.search);
+    router.get("/:id", controller.getById);
+    router.post("/", controller.create);
+    router.put("/:id", controller.update);
+    router.delete("/:id", controller.delete);
 
-export default router;
+    return router;
+}

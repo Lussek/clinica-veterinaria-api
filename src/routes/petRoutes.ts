@@ -1,12 +1,14 @@
 import { Router } from "express";
-import PetController from "../controllers/PetController.js";
+import type { PetController } from "../controllers/PetController.js";
 
-const router = Router();
+export function petRoutes(controller: PetController): Router {
+    const router = Router();
 
-router.get("/", PetController.getAll);
-router.get("/:id", PetController.getById);
-router.post("/", PetController.create);
-router.put("/:id", PetController.update);
-router.delete("/:id", PetController.remove);
+    router.get("/", controller.getAll);
+    router.get("/:id", controller.getById);
+    router.post("/", controller.create);
+    router.put("/:id", controller.update);
+    router.delete("/:id", controller.delete);
 
-export default router;
+    return router;
+}
