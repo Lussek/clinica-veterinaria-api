@@ -349,14 +349,14 @@ npm run test:coverage      # todos os testes + relatório de cobertura
 
 O relatório é exibido no terminal e salvo em `coverage/index.html` (abra no navegador). A cobertura mínima exigida é de **60%** em linhas, instruções, funções e branches, configurada como `thresholds` no [`vitest.config.ts`](vitest.config.ts): o comando falha se algum valor ficar abaixo disso. Todo o código de `src/` entra na medição, exceto o `server.ts`, que só chama `app.listen`.
 
-**Cobertura alcançada** (`npm run test:coverage`):
+**Cobertura alcançada** (`npm run test:coverage`, 115 testes: 73 unitários e 42 de integração):
 
-| Métrica | % |
-|---|---|
-| Statements | _a preencher_ |
-| Branches | _a preencher_ |
-| Functions | _a preencher_ |
-| Lines | _a preencher_ |
+| Métrica | Cobertura | Mínimo exigido |
+|---|---|---|
+| Statements (instruções) | 94,70% (429/453) | 60% |
+| Branches (ramificações) | 84,80% (212/250) | 60% |
+| Functions (funções) | 98,30% (116/118) | 60% |
+| Lines (linhas) | 99,06% (423/427) | 60% |
 
 **Cuidados com o banco de testes**
 - Os testes de integração criam registros com e-mails e nomes únicos por execução (`RUN_ID`) e **apagam tudo o que criaram** no `afterAll`, na ordem das chaves estrangeiras (consultas → pets → tutores). Assim podem ser executados várias vezes sem interferir nos dados existentes.
