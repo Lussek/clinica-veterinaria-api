@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Compilação (TypeScript)
+        run: npm run build
+
+      - name: Testes unitários
+        run: npm run test:unit
+
+      # Os testes de integração e a cobertura completa usam o Supabase.
+      # Rodam apenas se os secrets SUPABASE_URL e SUPABASE_SECRET_KEY estiverem
+      # configurados no repositório (Settings > Secrets and variables > Actions).
+      - name: Testes de integração + cobertura
+        if: ${{ env.SUPABASE_URL != '' }}
+        run: npm run test:coverage
